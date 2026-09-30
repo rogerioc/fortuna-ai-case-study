@@ -31,7 +31,7 @@ Most "AI apps" are thin wrappers around a single API call to a hosted LLM. Fortu
 ```mermaid
 graph TD
     subgraph Mobile [Android App · Jetpack Compose]
-        UI[Agent & Bills Screens]
+        UI[Screens: Agent, Bills, Transactions & Portfolio]
         VM[ViewModels & StateFlow]
         WM[WorkManager · BillReminderWorker]
         OD[OnDeviceAgentService<br/>MediaPipe + Gemma 3]
@@ -94,6 +94,53 @@ Users upload investment statement PDFs via Cloud Storage. The system triggers Ge
 
 ---
 
+## 📱 Application Screens & User Experience (UI/UX)
+
+The mobile UI is built 100% in **Jetpack Compose** using declarative stack navigation (`AppNavigation.kt`), structured across 5 functional pillars:
+
+### 1. AI Assistant & Insights (`AgentScreen`)
+* **Proactive Insight Cards:** Actionable budget alerts and spending anomalies surfaced by AI.
+* **Inference Mode Toggle:** Instant switching between private On-Device (offline Gemma) and Cloud (Gemini).
+* **Interactive Chat:** Full conversational history with structured rendering of suggested actions.
+
+### 2. Scheduled Obligations & Reconciliation (`BillsScreen`)
+* **Bills Overview:** Visual separation between *Pending* and *Paid* bills synchronized from Google Calendar (`scheduled_bills`).
+* **Auto-Reconciliation Engine:** Interface to inspect and configure regex/matching rules (`bill_mappings`) connecting bank charges to scheduled bills.
+* **WorkManager Alerts:** Daily background notifications for upcoming due dates.
+
+### 3. Expense Analytics & Transaction Explorer
+* **Monthly Overview (`MonthlyReportScreen`):** Net cash flow, average ticket, category breakdown charts, and top expenses.
+* **Monthly Transactions Explorer (`MonthlyTransactionsScreen`):** Full searchable table of monthly charges with real-time text filtering and chronological sorting.
+* **Category Drill-Down (`CategoryTransactionsScreen`):** Deep dive into specific category expenses with cumulative totals.
+
+### 4. Investment Portfolio & Document OCR (`InvestmentScreen`)
+* **Asset Allocation:** Consolidated net worth tracking across Fixed Income, Equities (B3), Real Estate Funds (FIIs), and Crypto.
+* **Financial Milestones:** Tracking progress against short and long-term financial goals.
+* **Statement OCR:** One-click PDF upload triggering Gemini Flash automated statement ingestion.
+
+### 5. Settings & Data Governance
+* **Budget Limits (`BudgetLimitsScreen`):** Category-level thresholds used by the AI agent to flag budget overruns.
+* **Push Notification Logs (`NotificationListScreen`):** Live stream of captured transactions with synchronization flags (`synced`).
+* **Package Filters (`FilterListScreen`):** Granular controls configuring which banking apps are intercepted by `NotificationListenerService`.
+
+---
+
+## 🖼️ Screen Gallery
+
+> Screenshots from the production app running on live data (third-party identifying information redacted).
+
+| Agent Home (Proactive Insights) | Monthly Summary & Aggregates |
+|---|---|
+| ![Agent Home](assets/01-agent-home.png) | ![Monthly Summary](assets/02-monthly-summary.png) |
+| Proactive AI insight cards + **Cloud / On-Device** toggle | Real-time consolidated spend by category |
+
+| Budget & Category Limits | Push Ingestion & Filters | Agent Management |
+|---|---|---|
+| ![Budget Limits](assets/03-budget-limits.png) | ![App Filters](assets/04-app-filters.png) | ![Agent Menu](assets/05-agent-menu.png) |
+| Dynamic per-category budget thresholds | Allowed banking apps for live capture | Assistant configuration & prompt overrides |
+
+---
+
 ## ⚙️ Key Engineering Decisions
 
 * **Edge + Cloud Hybrid Design:** Heavy analytical jobs and OCR live in the cloud; private, latency-critical inquiries and daily local notifications live on the client.
@@ -110,22 +157,6 @@ Users upload investment statement PDFs via Cloud Storage. The system triggers Ge
 * **Backend & Cloud Functions:** Python 3.12, Google Cloud Functions (Gen2 / Cloud Run), Firebase Admin SDK, Pydantic, Gemini Flash.
 * **Orchestration & Data Pipelines:** Prefect Cloud / Server, Google Calendar API, Google Sheets API (`gspread`), `yfinance`, Binance API.
 * **Databases:** Cloud Firestore (NoSQL), Firebase Realtime Database (event queue).
-
----
-
-## 📱 Application Screens
-
-> Screenshots from the production app running on live data (third-party identifying information redacted).
-
-| Agent Home (Proactive Insights) | Monthly Summary & Aggregates |
-|---|---|
-| ![Agent Home](assets/01-agent-home.png) | ![Monthly Summary](assets/02-monthly-summary.png) |
-| Proactive AI insight cards + **Cloud / On-Device** toggle | Real-time consolidated spend by category |
-
-| Budget & Category Limits | Push Ingestion & Filters | Agent Management |
-|---|---|---|
-| ![Budget Limits](assets/03-budget-limits.png) | ![App Filters](assets/04-app-filters.png) | ![Agent Menu](assets/05-agent-menu.png) |
-| Dynamic per-category budget thresholds | Allowed banking apps for live capture | Assistant configuration & prompt overrides |
 
 ---
 

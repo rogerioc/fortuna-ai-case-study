@@ -31,7 +31,7 @@ A maioria das "aplicações com IA" são apenas invólucros simples ao redor de 
 ```mermaid
 graph TD
     subgraph Mobile [App Android · Jetpack Compose]
-        UI[Telas: Assistente & Contas]
+        UI[Telas: Assistente, Contas, Transações & Investimentos]
         VM[ViewModels & StateFlow]
         WM[WorkManager · BillReminderWorker]
         OD[OnDeviceAgentService<br/>MediaPipe + Gemma 3]
@@ -94,6 +94,53 @@ O usuário faz upload de extratos em PDF para o Cloud Storage. A função dispar
 
 ---
 
+## 📱 Telas da Aplicação & Experiência do Usuário (UI/UX)
+
+A interface é construída 100% em **Jetpack Compose** com navegação baseada em pilha declarativa (`AppNavigation.kt`), dividida em 5 pilares funcionais:
+
+### 1. Assistente de IA & Insights (`AgentScreen`)
+* **Cards de Insights:** Alertas proativos com recomendações orçamentárias geradas por IA.
+* **Seletor de Modo de Inferência:** Permite alternar instantaneamente entre processamento On-Device (Gemma offline) e Nuvem (Gemini).
+* **Interface Conversacional:** Histórico de chat com respostas estruturadas e renderização de sugestões rápidas.
+
+### 2. Gestão de Contas a Pagar & Conciliação (`BillsScreen`)
+* **Visão de Contas:** Separação visual entre contas *Pendentes* e *Pagas* sincronizadas do Google Calendar (`scheduled_bills`).
+* **Regras de Auto-Conciliação:** Interface para criar e gerenciar mapeamentos de regex/termos (`bill_mappings`) que associam despesas bancárias a contas da agenda.
+* **Lembretes via WorkManager:** Notificações locais diárias de contas prestes a vencer.
+
+### 3. Análise de Gastos e Histórico Detalhado
+* **Resumo Mensal (`MonthlyReportScreen`):** Indicadores de fluxo de caixa, total gasto, ticket médio e gráfico de despesas por categoria.
+* **Todas as Transações do Mês (`MonthlyTransactionsScreen`):** Lista tabular de todos os lançamentos do mês, com campo de busca em tempo real por estabelecimento e ordenação cronológica.
+* **Detalhamento por Categoria (`CategoryTransactionsScreen`):** Drill-down detalhado exibindo todas as compras individuais de uma categoria específica.
+
+### 4. Carteira de Investimentos & OCR (`InvestmentScreen`)
+* **Distribuição do Portfólio:** Visão consolidada de patrimônio (Renda Fixa, Ações B3, FIIs e Criptomoedas).
+* **Metas Financeiras:** Acompanhamento de objetivos de curto, médio e longo prazo.
+* **OCR de Extratos:** Botão para envio de PDFs de corretoras com extração automática via Gemini Flash.
+
+### 5. Configurações e Governança de Dados
+* **Limites Orçamentários (`BudgetLimitsScreen`):** Definição de limites de gastos por categoria que alimentam as análises do agente de IA.
+* **Histórico de Pushes (`NotificationListScreen`):** Stream de notificações capturadas com status de sincronização (`synced`).
+* **Filtros de Aplicativos (`FilterListScreen`):** Controle granular de quais apps bancários são monitorados pelo `NotificationListenerService`.
+
+---
+
+## 🖼️ Galeria de Telas
+
+> Capturas de tela da versão em produção rodando com dados reais (dados identificáveis de terceiros foram ofuscados).
+
+| Home do Assistente (Insights Proativos) | Resumo Mensal & Agregados |
+|---|---|
+| ![Home do Assistente](assets/01-agent-home.png) | ![Resumo Mensal](assets/02-monthly-summary.png) |
+| Cards de insights de IA + seletor **Nuvem / On-Device** | Gastos consolidados por categoria em tempo real |
+
+| Limites Orçamentários | Ingestão de Notificações & Filtros | Gestão do Assistente |
+|---|---|---|
+| ![Limites Orçamentários](assets/03-budget-limits.png) | ![Filtros de Apps](assets/04-app-filters.png) | ![Menu do Agente](assets/05-agent-menu.png) |
+| Tetos de gastos dinâmicos monitorados pela IA | Aplicativos de bancos habilitados para captura | Configurações do agente e customização de prompts |
+
+---
+
 ## ⚙️ Principais Decisões de Engenharia
 
 * **Design Híbrido (Edge + Cloud):** Tarefas analíticas pesadas e OCR ficam na nuvem; consultas privadas com baixa latência e notificações diárias rodam no próprio cliente móvel.
@@ -110,22 +157,6 @@ O usuário faz upload de extratos em PDF para o Cloud Storage. A função dispar
 * **Backend & Cloud Functions:** Python 3.12, Google Cloud Functions (Gen2 / Cloud Run), Firebase Admin SDK, Pydantic, Gemini Flash.
 * **Orquestração & Pipelines de Dados:** Prefect Cloud / Server, Google Calendar API, Google Sheets API (`gspread`), `yfinance`, Binance API.
 * **Bancos de Dados:** Cloud Firestore (NoSQL transacional), Firebase Realtime Database (fila de mensagens em tempo real).
-
----
-
-## 📱 Telas da Aplicação
-
-> Capturas de tela da versão em produção rodando com dados reais (dados identificáveis de terceiros foram ofuscados).
-
-| Home do Assistente (Insights Proativos) | Resumo Mensal & Agregados |
-|---|---|
-| ![Home do Assistente](assets/01-agent-home.png) | ![Resumo Mensal](assets/02-monthly-summary.png) |
-| Cards de insights de IA + seletor **Nuvem / On-Device** | Gastos consolidados por categoria em tempo real |
-
-| Limites Orçamentários | Ingestão de Notificações & Filtros | Gestão do Assistente |
-|---|---|---|
-| ![Limites Orçamentários](assets/03-budget-limits.png) | ![Filtros de Apps](assets/04-app-filters.png) | ![Menu do Agente](assets/05-agent-menu.png) |
-| Tetos de gastos dinâmicos monitorados pela IA | Aplicativos de bancos habilitados para captura | Configurações do agente e customização de prompts |
 
 ---
 
