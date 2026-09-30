@@ -1,107 +1,136 @@
-# Fortuna — A Hybrid Cloud + On-Device AI Assistant
+# Fortuna — A Hybrid Cloud + On-Device AI Financial Ecosystem
 
-**Case study.** Fortuna is a personal financial assistant I built to explore a question most teams aren't tackling yet: *what belongs in a cloud LLM, and what should run on the device itself?* It runs an AI agent across **both** — Gemini in the cloud and Gemma on-device via MediaPipe — inside a real Android app backed by an event-driven serverless pipeline.
+**Case study.** Fortuna is a personal financial assistant and automation ecosystem I built to explore a critical question in modern systems engineering: *what belongs in a cloud LLM, and what should run on the device itself?* It operates an AI agent across **both** — Gemini in the cloud and Gemma on-device via MediaPipe/LiteRT — inside a production-grade Android application backed by an event-driven serverless pipeline and automated reconciliation workflows.
 
-> The application code and data are private (it runs on my own financial data). This repository documents the architecture and engineering decisions. **Live demo available on request.**
-
----
-
-## Why it's interesting
-
-Most "LLM app" projects are a single API call to a hosted model. Fortuna is a **full system**:
-
-- a **mobile client** (Jetpack Compose, Clean Architecture) that can talk to either a cloud or an on-device model,
-- a **cloud agent** that assembles user context, calls an LLM with structured outputs, and caches proactive insights,
-- an **event-driven data backend** that keeps everything consistent in under a second,
-- and an **orchestration layer** for the batch/analytical jobs.
-
-It's the combination — mobile + LLM orchestration + data engineering + on-device inference — that makes it a real Applied-AI system rather than a demo.
+> The application code and data are private (it manages my own financial operations). This repository documents the architecture, system design, and engineering decisions. **Live demo available on request.**
 
 ---
 
-## Architecture
+## 💡 Why it's interesting
+
+Most "AI apps" are thin wrappers around a single API call to a hosted LLM. Fortuna is a **complete end-to-end distributed system**:
+
+- 📱 a **mobile client** (Kotlin, Jetpack Compose, Feature-First Clean Architecture, Room SQLite) capable of seamlessly routing prompts between on-device local models and cloud endpoints.
+- ⚡ a **cloud agent (`run_myagent`)** with Pydantic-validated structured outputs, asynchronous Firestore data assembly, and proactive cached insights.
+- 🤖 an **on-device LLM (Gemma 3)** running locally via MediaPipe for zero-latency, private financial queries without network connectivity.
+- ⏰ **background proactive automation** utilizing **Android WorkManager** for scheduled bill alerts and Prefect flows for bidirectional **Google Calendar** sync and payment reconciliation.
+- 📊 an **event-driven data backbone** that guarantees transactional consistency across Firestore reports in under a second upon new transaction ingestion.
+- 📈 an **investment tracking & OCR engine** combining multimodal Gemini extraction of PDF statements with real-time market data (B3 & Crypto).
+
+---
+
+## 🏗️ System Architecture
 
 ```mermaid
 graph TD
     subgraph Mobile [Android App · Jetpack Compose]
-        UI[AgentScreen]
-        VM[AgentViewModel]
-        REP[AgentRepository]
-        OD[OnDeviceAgentService<br/>MediaPipe + Gemma 3n]
+        UI[Agent & Bills Screens]
+        VM[ViewModels & StateFlow]
+        WM[WorkManager · BillReminderWorker]
+        OD[OnDeviceAgentService<br/>MediaPipe + Gemma 3]
+        ROOM[(Room SQLite Cache)]
     end
 
-    subgraph Cloud [Firebase / Google Cloud]
-        CF[Cloud Function: run_agent_session]
-        FS[(Firestore: reports, limits, agent state)]
+    subgraph Cloud [Firebase / Google Cloud Gen2]
+        CF_AGENT[Cloud Function: run_myagent]
+        CF_RECON[Trigger: on_transaction_changed]
+        CF_OCR[Cloud Function: process_investment_pdf_ocr]
+        FS[(Firestore: reports, bills, assets, agent state)]
+        RTD[(Realtime Database Queue)]
     end
 
-    subgraph LLM [Models]
-        GEMINI[Gemini 2.5 Flash-Lite · cloud]
-        GEMMA[Gemma 3n · on-device]
+    subgraph LLMs [AI Layer]
+        GEMINI[Gemini 2.5 / 3.5 Flash · Cloud Structured Output]
+        GEMMA[Gemma 3 · On-Device Private Inference]
     end
 
-    UI --> VM --> REP
-    REP -->|cloud path| CF
-    REP -->|on-device path| OD
-    OD --> GEMMA
-    CF -->|context from 2 months| FS
-    CF -->|structured JSON prompt| GEMINI
-    GEMINI -->|insights + chat response| CF
-    CF -->|cache insights| FS
-    REP <-->|reactive snapshot| FS
+    subgraph External [External Services & Orchestration]
+        GCAL[Google Calendar API]
+        PREFECT[Prefect Cloud · Pipelines & Sync]
+        MARKET[Yahoo Finance & Binance APIs]
+    end
+
+    UI --> VM
+    VM --> OD --> GEMMA
+    VM --> CF_AGENT -->|Structured Prompt| GEMINI
+    CF_AGENT -->|Async Context & Cached Insights| FS
+    WM -->|Daily Due Date Checks| FS
+
+    RTD -->|Push Ingestion| PREFECT
+    PREFECT -->|Categorization Flow| GEMINI
+    PREFECT -->|Bi-directional Sync & Reconciliation| GCAL
+    PREFECT -->|Transactions & Assets| FS
+    MARKET -->|Live Quotes| PREFECT
+
+    CF_RECON -->|Auto-Reconcile Bills & Aggregates| FS
+    CF_OCR -->|PDF Extraction| GEMINI
+    CF_OCR -->|Investments Delta| FS
+    VM <-->|Reactive Snapshots| FS
 ```
 
 ---
 
-## How the AI layer works
+## 🧠 How the Multi-Tier AI Layer Works
 
-**Cloud agent (`run_agent_session`).** A Python Cloud Function gathers the user's financial context over a 2-month window, builds a structured prompt, and calls **Gemini 2.5 Flash-Lite** with `response_mime_type: application/json` — so the model returns *both* a chat reply and a typed list of proactive insights in one call. Insights are cached in Firestore for instant load on the next app open.
+### 1. Cloud Agent (`run_myagent`)
+A Python Gen2 Cloud Function gathers 2 months of transactional context, category budget limits, and upcoming scheduled obligations. Using Pydantic schemas and Gemini Structured Outputs (`application/json`), it returns:
+* A typed chat answer.
+* An array of actionable, proactive financial insight cards.
+* Automated tool-call detection for actions like investment registrations.
+Insights are cached in `users/{userId}/agent/state` for instantaneous cold starts on mobile.
 
-**On-device agent (`OnDeviceAgentService`).** Using MediaPipe's `LlmInference`, the app loads a quantized **Gemma 3n** model from local storage and runs inference fully on the phone — no network, no data leaving the device. The repository can route a request to either path.
+### 2. On-Device Local LLM (`OnDeviceAgentService`)
+Using MediaPipe’s `LlmInference` engine, the mobile app loads a 4-bit quantized **Gemma 3** model directly into device RAM. It processes budget summaries and prompt context strictly on CPU/GPU without sending sensitive financial telemetry outside the phone.
 
-**Event-driven backend.** Firestore triggers (`on_transaction_changed`) recompute monthly aggregates transactionally whenever a transaction is created, edited, or deleted — keeping the UI consistent in < 1s. A separate trigger ingests bank notifications and kicks off the analytical pipeline.
-
-**Orchestration.** Batch jobs (categorization, consolidation, report generation) run as **Prefect** flows; hybrid categorization combines a cache with LLM calls to keep cost and latency down.
-
----
-
-## Engineering decisions worth noting
-
-- **Hybrid inference by design** — cloud for rich, context-heavy reasoning; on-device for privacy and offline use. The client abstracts which model answers.
-- **Structured outputs over free text** — the model returns typed JSON, so the app never parses prose.
-- **Keys never touch the device** — all cloud inference runs server-side in Cloud Functions.
-- **Spec-driven development** — the system is documented (architecture, alternatives, a pipeline post-mortem) before and as it's built.
+### 3. Multimodal Document OCR (`process_investment_pdf_ocr`)
+Users upload investment statement PDFs via Cloud Storage. The system triggers Gemini Flash to parse messy broker reports, extracting transactions (`APLICACAO`, `RESGATE`, `RENDIMENTO`), and automatically updates asset balances and Google Sheets backups.
 
 ---
 
-## Tech stack
+## ⚙️ Key Engineering Decisions
 
-**Mobile:** Kotlin · Jetpack Compose · Clean Architecture · MediaPipe (`LlmInference`) · Gemma 3n
-**Cloud:** Python · Google Cloud Functions (Gen2) · Firebase / Firestore · Gemini 2.5 Flash-Lite
-**Data/Orchestration:** Prefect · event-driven triggers · transactional aggregation
+* **Edge + Cloud Hybrid Design:** Heavy analytical jobs and OCR live in the cloud; private, latency-critical inquiries and daily local notifications live on the client.
+* **Strict Spec-Driven Development (SDD):** Firestore models, NoSQL collection schemas, and reconciliation heuristics are documented and enforced via a Single Source of Truth (SSOT).
+* **Automated Calendar & Statement Reconciliation:** Financial debits are automatically matched against scheduled calendar entries using date tolerance windows and fuzzy name matching, auto-marking bills as `[PAGO]` in Google Calendar.
+* **Hermetic End-to-End Testing:** Backend and pipeline updates are validated using automated emulator harnesses (`Firebase Emulator + Prefect Server`) before deployment to production.
+* **Deterministic Transaction Hashing:** Transactions use MD5 hashes of `date + time + amount + establishment` as document IDs to eliminate duplicates across push retries.
 
 ---
 
-## Screens
+## 🛠️ Tech Stack
 
-> Screenshots from the real app. Third-party names are redacted for privacy; values are illustrative.
+* **Mobile (Android):** Kotlin, Jetpack Compose, Clean Architecture (Feature-First), Room (SQLite), WorkManager, MediaPipe GenAI / LiteRT, Gemma 3.
+* **Backend & Cloud Functions:** Python 3.12, Google Cloud Functions (Gen2 / Cloud Run), Firebase Admin SDK, Pydantic, Gemini Flash.
+* **Orchestration & Data Pipelines:** Prefect Cloud / Server, Google Calendar API, Google Sheets API (`gspread`), `yfinance`, Binance API.
+* **Databases:** Cloud Firestore (NoSQL), Firebase Realtime Database (event queue).
 
-| Agent home | Monthly summary |
+---
+
+## 📱 Application Screens
+
+> Screenshots from the production app running on live data (third-party identifying information redacted).
+
+| Agent Home (Proactive Insights) | Monthly Summary & Aggregates |
 |---|---|
-| ![Agent home](assets/01-agent-home.png) | ![Monthly summary](assets/02-monthly-summary.png) |
-| Proactive insight cards + **cloud / on-device** mode toggle | Consolidated spend by category |
+| ![Agent Home](assets/01-agent-home.png) | ![Monthly Summary](assets/02-monthly-summary.png) |
+| Proactive AI insight cards + **Cloud / On-Device** toggle | Real-time consolidated spend by category |
 
-| Budget limits | Notification filters | Agent menu |
+| Budget & Category Limits | Push Ingestion & Filters | Agent Management |
 |---|---|---|
-| ![Budget limits](assets/03-budget-limits.png) | ![App filters](assets/04-app-filters.png) | ![Agent menu](assets/05-agent-menu.png) |
-| Per-category limits the agent reasons over | Which bank/app notifications feed the pipeline | Assistant navigation + insights |
+| ![Budget Limits](assets/03-budget-limits.png) | ![App Filters](assets/04-app-filters.png) | ![Agent Menu](assets/05-agent-menu.png) |
+| Dynamic per-category budget thresholds | Allowed banking apps for live capture | Assistant configuration & prompt overrides |
 
 ---
 
-## Demo
+## 🎥 Live Demo & Presentation
 
-A short walkthrough video (proactive insight cards + cloud chat + on-device inference toggle) is available on request — reach me on [LinkedIn](https://www.linkedin.com/in/rogeriocs/).
+A comprehensive walkthrough video demonstrating:
+* Live push interception and real-time Firestore aggregation.
+* Seamless switching between **Cloud Gemini** and **On-Device Gemma 3**.
+* Scheduled bills management with background WorkManager reminders.
+
+*Available on request — feel free to connect via [LinkedIn](https://www.linkedin.com/in/rogeriocs/).*
 
 ---
 
-*Built by [Rogério Celestino](https://rogerioc.github.io/about/) — senior software engineer focused on Applied AI.*
+*Engineered by [Rogério Celestino](https://rogerioc.github.io/about/) — Senior Software Engineer focused on Applied AI & Distributed Systems.*
