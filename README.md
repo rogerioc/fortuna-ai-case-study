@@ -1,5 +1,12 @@
 # Fortuna — A Hybrid Cloud + On-Device AI Financial Ecosystem
 
+<p align="center">
+  <b>🇺🇸 English</b> |
+  <a href="README.pt-BR.md">🇧🇷 Português</a>
+</p>
+
+---
+
 **Case study.** Fortuna is a personal financial assistant and automation ecosystem I built to explore a critical question in modern systems engineering: *what belongs in a cloud LLM, and what should run on the device itself?* It operates an AI agent across **both** — Gemini in the cloud and Gemma on-device via MediaPipe/LiteRT — inside a production-grade Android application backed by an event-driven serverless pipeline and automated reconciliation workflows.
 
 > The application code and data are private (it manages my own financial operations). This repository documents the architecture, system design, and engineering decisions. **Live demo available on request.**
