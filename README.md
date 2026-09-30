@@ -129,15 +129,20 @@ The mobile UI is built 100% in **Jetpack Compose** using declarative stack navig
 
 > Screenshots from the production app running on live data (third-party identifying information redacted).
 
-| Agent Home (Proactive Insights) | Monthly Summary & Aggregates |
-|---|---|
-| ![Agent Home](assets/01-agent-home.png) | ![Monthly Summary](assets/02-monthly-summary.png) |
-| Proactive AI insight cards + **Cloud / On-Device** toggle | Real-time consolidated spend by category |
-
-| Budget & Category Limits | Push Ingestion & Filters | Agent Management |
+| Agent Home (Proactive AI) | Monthly Summary & Aggregates | Scheduled Bills & Calendar |
 |---|---|---|
-| ![Budget Limits](assets/03-budget-limits.png) | ![App Filters](assets/04-app-filters.png) | ![Agent Menu](assets/05-agent-menu.png) |
-| Dynamic per-category budget thresholds | Allowed banking apps for live capture | Assistant configuration & prompt overrides |
+| ![Agent Home](assets/01-agent-home.png) | ![Monthly Summary](assets/02-monthly-summary.png) | ![Scheduled Bills](assets/06-bills-screen.png) |
+| Proactive AI cards + **Cloud / On-Device** toggle | Real-time consolidated spend by category | Calendar sync and auto-reconciliation rules |
+
+| Monthly Transactions Explorer | Investment Portfolio & OCR | Budget & Category Limits |
+|---|---|---|
+| ![Monthly Transactions](assets/07-monthly-transactions.png) | ![Investments](assets/08-investment-portfolio.png) | ![Budget Limits](assets/03-budget-limits.png) |
+| Search by merchant name & chronological sort | Multi-asset net worth & PDF statement OCR | Dynamic thresholds feeding the AI agent |
+
+| Push Ingestion & Filters | Agent Hub & Navigation |
+|---|---|
+| ![App Filters](assets/04-app-filters.png) | ![Agent Menu](assets/05-agent-menu.png) |
+| Monitored banking applications | Central navigation and prompt configuration |
 
 ---
 

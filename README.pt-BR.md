@@ -129,15 +129,20 @@ A interface é construída 100% em **Jetpack Compose** com navegação baseada e
 
 > Capturas de tela da versão em produção rodando com dados reais (dados identificáveis de terceiros foram ofuscados).
 
-| Home do Assistente (Insights Proativos) | Resumo Mensal & Agregados |
-|---|---|
-| ![Home do Assistente](assets/01-agent-home.png) | ![Resumo Mensal](assets/02-monthly-summary.png) |
-| Cards de insights de IA + seletor **Nuvem / On-Device** | Gastos consolidados por categoria em tempo real |
-
-| Limites Orçamentários | Ingestão de Notificações & Filtros | Gestão do Assistente |
+| Home do Assistente (IA) | Resumo Mensal & Agregados | Agenda & Contas a Pagar |
 |---|---|---|
-| ![Limites Orçamentários](assets/03-budget-limits.png) | ![Filtros de Apps](assets/04-app-filters.png) | ![Menu do Agente](assets/05-agent-menu.png) |
-| Tetos de gastos dinâmicos monitorados pela IA | Aplicativos de bancos habilitados para captura | Configurações do agente e customização de prompts |
+| ![Home do Assistente](assets/01-agent-home.png) | ![Resumo Mensal](assets/02-monthly-summary.png) | ![Agenda de Contas](assets/06-bills-screen.png) |
+| Cards de insights + toggle Nuvem/On-Device | Gastos por categoria em tempo real | Contas sincronizadas e regras de conciliação |
+
+| Todas as Transações do Mês | Carteira de Investimentos | Limites Orçamentários |
+|---|---|---|
+| ![Todas as Transações](assets/07-monthly-transactions.png) | ![Investimentos](assets/08-investment-portfolio.png) | ![Limites Orçamentários](assets/03-budget-limits.png) |
+| Busca por estabelecimento e ordenação | Posição consolidada e OCR de extratos | Tetos de gastos dinâmicos para a IA |
+
+| Ingestão de Notificações & Filtros | Menu Central do Assistente |
+|---|---|
+| ![Filtros de Apps](assets/04-app-filters.png) | ![Menu do Agente](assets/05-agent-menu.png) |
+| Aplicativos bancários monitorados | Navegação central e configuração do assistente |
 
 ---
 
